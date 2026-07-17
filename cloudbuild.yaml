@@ -1,0 +1,36 @@
+steps:
+  - id: validate-sql
+    name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        test -f "${_SQL_FILE}"
+        test -s "${_SQL_FILE}"
+
+  - id: simulate-deploy
+    name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    env:
+      - SIMULATE_DEPLOY=${_SIMULATE_DEPLOY}
+      - GCP_PROJECT_ID=$PROJECT_ID
+      - GCP_REGION=${_GCP_REGION}
+      - GCP_DB_TARGET=${_GCP_DB_TARGET}
+      - DEPLOY_OUTPUT_DIR=build/deploy
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        chmod +x scripts/deploy_sql.sh
+        scripts/deploy_sql.sh "${_SQL_FILE}" "${_ENVIRONMENT}"
+
+substitutions:
+  _SQL_FILE: test.sql
+  _ENVIRONMENT: dev
+  _SIMULATE_DEPLOY: "true"
+  _GCP_REGION: us-central1
+  _GCP_DB_TARGET: oracle-on-gce-demo
+
+options:
+  logging: CLOUD_LOGGING_ONLY

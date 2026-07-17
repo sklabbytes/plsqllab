@@ -1,0 +1,42 @@
+name: Simulate PL/SQL Deploy
+
+on:
+  push:
+    paths:
+      - '**.sql'
+      - 'scripts/deploy_sql.sh'
+      - '.github/workflows/simulate-plsql-deploy.yml'
+      - 'cloudbuild.yaml'
+  workflow_dispatch:
+    inputs:
+      sql_file:
+        description: SQL file to deploy
+        required: false
+        default: test.sql
+      environment:
+        description: Deployment environment label
+        required: false
+        default: dev
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Simulate deploy
+        env:
+          SIMULATE_DEPLOY: true
+          GCP_PROJECT_ID: demo-project
+          GCP_REGION: us-central1
+          GCP_DB_TARGET: oracle-on-gce-demo
+        run: |
+          chmod +x scripts/deploy_sql.sh
+          scripts/deploy_sql.sh "${{ inputs.sql_file || 'test.sql' }}" "${{ inputs.environment || 'dev' }}"
+
+      - name: Upload simulated artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulated-deploy-artifacts
+          path: build/deploy/
